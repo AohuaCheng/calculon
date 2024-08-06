@@ -38,12 +38,25 @@ class Llm:
       self.attn_heads = cfg['attn_heads']
       self.attn_size = cfg['attn_size']
       self.num_blocks = cfg['num_blocks']
+      self.lora_attn_dim = cfg['lora_attn_dim']
+      self.lora_attn_alpha = cfg['lora_attn_alpha']
+      self.lora_q = cfg['lora_q']
+      self.lora_k = cfg['lora_k']
+      self.lora_v = cfg['lora_v']
+      self.lora_o = cfg['lora_o']
 
     def num_parameters(self):
       # https://cs.stanford.edu/~matei/papers/2021/sc_megatron_lm.pdf
       # Equation 2
       p = 2 * self.hidden * self.feedforward                   # MLP weights
       p += 4 * self.hidden * self.attn_heads * self.attn_size  # Attn weights
+      if self.lora_attn_dim>0:
+        if self.lora_q:
+          p += self.hidden * self.lora_attn_dim + self.lora_attn_dim * self.attn_heads * self.attn_size
+        if self.lora_k:
+          p += self.hidden * self.lora_attn_dim + self.lora_attn_dim * self.attn_heads * self.attn_size
+        if self.lora_v:
+          p += self.hidden * self.lora_attn_dim + self.lora_attn_dim * self.attn_heads * self.attn_size
       p += self.hidden + self.feedforward                      # biases MLP
       p += 3 * self.attn_heads * self.attn_size + self.hidden  # biases Attn
       p += 2 * 2 * self.hidden                                 # layer norm
@@ -699,6 +712,8 @@ class Llm:
         self._batch_seq,
         self.app.hidden,
         self.app.attn_heads * self.app.attn_size // self.exe.tensor_par,
+        self.app.lora_attn_dim,
+        self.app.lora_q,
         needs_recompute=recompute_flag,
         # Activation is stored in Fork instead,
         activation_stored=False,
@@ -710,6 +725,8 @@ class Llm:
           self._batch_seq,
           self.app.hidden,
           self.app.attn_heads * self.app.attn_size // self.exe.tensor_par,
+          self.app.lora_attn_dim,
+          self.app.lora_k,
           needs_recompute=recompute_flag,
           # Activation is stored in Fork instead,
           activation_stored=False,
@@ -720,6 +737,8 @@ class Llm:
           self._batch_seq,
           self.app.hidden,
           self.app.attn_heads * self.app.attn_size // self.exe.tensor_par,
+          self.app.lora_attn_dim,
+          self.app.lora_v,
           needs_recompute=recompute_flag,
           # Activation is stored in Fork instead,
           activation_stored=False,
@@ -849,6 +868,8 @@ class Llm:
         self._batch_seq,
         self.app.attn_heads * self.app.attn_size // self.exe.tensor_par,
         self.app.hidden,
+        self.app.lora_attn_dim,
+        self.app.lora_o,
         needs_recompute=recompute_flag))
       self._llm_block.append(TPComm(
         "AttnBlock_G",

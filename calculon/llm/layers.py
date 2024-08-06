@@ -340,21 +340,23 @@ class Layer:
 # rewriting parent class member functions when needed
 class Linear(Layer):
   def __init__(self, name, sys, batch_seq, c_in, c_out,
+               lora_dim=0, enable_lora=False,
                needs_recompute=False, activation_reused=False,
                activation_stored=True, output_stored=True):
-    m, n, k = batch_seq, c_in, c_out
+    m, n, k, r = batch_seq, c_in, c_out, lora_dim
+    lora_flag = lora_dim>0 and enable_lora
     super().__init__(name,
                      sys,
-                     fw_flops=2*m*n*k,
-                     agrad_flops=2*m*n*k,
-                     wgrad_flops=2*m*n*k,
+                     fw_flops=2*m*n*k if not lora_flag else 2*m*n*k+4*m*n*r,
+                     agrad_flops=2*m*n*k if not lora_flag else 4*m*n*r,
+                     wgrad_flops=2*m*n*k if not lora_flag else 4*m*n*r,
                      inputs_size=m*n,
                      output_size=m*k,
-                     weight_space=n*k,
-                     weight_grads=n*k,
+                     weight_space=n*k if not lora_flag else n*k+2*n*r,
+                     weight_grads=n*k if not lora_flag else 2*n*r,
                      activation_space=m*n,
                      activation_grads=m*k,
-                     optim_space=2*n*k,
+                     optim_space=2*n*k if not lora_flag else 4*n*r,
                      needs_recompute=needs_recompute,
                      activation_reused=activation_reused,
                      activation_stored=activation_stored,
