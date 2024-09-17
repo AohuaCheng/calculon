@@ -68,6 +68,8 @@ class OptimalExecution(calculon.CommandLine):
                     help='Don\'t allow TP overlap')
     sp.add_argument('--no-dp-overlap', action='store_true',
                     help='Don\'t allow DP overlap')
+    sp.add_argument('-training', default='true',
+                    help='train or test')
 
   @staticmethod
   def run_command(logger, args):
@@ -94,7 +96,7 @@ class OptimalExecution(calculon.CommandLine):
                    args.max_batch_size, args.datatype, app, syst, tp, pp, dp,
                    ppint, batch_size, activation_recompute, optimizer_sharding,
                    tensor_par_comm_type, args.fused_activation, args.mbs_break,
-                   not args.no_tp_overlap, not args.no_dp_overlap))
+                   not args.no_tp_overlap, not args.no_dp_overlap, args.training))
 
     # Runs parallel searches
     start_time = datetime.datetime.now()
@@ -176,7 +178,7 @@ class OptimalExecution(calculon.CommandLine):
   def search(debug, top_n, layers, num_procs, max_batch_size, datatype,
              app, syst, tp, pp, dp, ppint, batch_size, activation_recompute,
              optimizer_sharding, tensor_par_comm_type, fused_acts, mbs_break,
-             allow_tp_overlap, allow_dp_overlap):
+             allow_tp_overlap, allow_dp_overlap, training):
     num_nets = syst.num_networks
 
     best = []
@@ -232,7 +234,7 @@ class OptimalExecution(calculon.CommandLine):
                             'weight_offload': weight_offload,
                             'activations_offload': activations_offload,
                             'optimizer_offload': optimizer_offload,
-                            'training': True
+                            'training': training
                           }
 
                           if not debug:

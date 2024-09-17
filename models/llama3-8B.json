@@ -1,0 +1,12 @@
+{
+  "hidden": 4096,
+  "feedforward": 14336,
+  "seq_size": 8192,
+  "attn_heads": 32,
+  "attn_size": 128,
+  "num_blocks": 32,
+  "kv_heads": 8,
+  "positional_embeddings": ["RoPE"],
+  "activation_function": "SwiGLU",
+  "vocab_size": 128000
+}

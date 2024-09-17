@@ -1,0 +1,16 @@
+{
+  "hidden": 12288,
+  "feedforward": 49152,
+  "seq_size": 2048,
+  "attn_heads": 96,
+  "attn_size": 128,
+  "num_blocks": 96,
+  "lora_attn_dim": 2,
+  "lora_attn_alpha": 32,
+  "lora_dropout": 0.1,
+  "lora_r_dropout": 0.1,
+  "lora_q": true,
+  "lora_k": false,
+  "lora_v": true,
+  "lora_o": false
+}

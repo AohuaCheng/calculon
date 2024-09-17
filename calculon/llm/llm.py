@@ -38,18 +38,38 @@ class Llm:
       self.attn_heads = cfg['attn_heads']
       self.attn_size = cfg['attn_size']
       self.num_blocks = cfg['num_blocks']
-      self.lora_attn_dim = cfg['lora_attn_dim']
-      self.lora_attn_alpha = cfg['lora_attn_alpha']
-      self.lora_q = cfg['lora_q']
-      self.lora_k = cfg['lora_k']
-      self.lora_v = cfg['lora_v']
-      self.lora_o = cfg['lora_o']
+      try:
+        self.positional_embeddings = cfg['positional_embeddings']
+        self.activation_function = cfg['activation_function']
+        self.vocab_size = cfg['vocab_size']
+        self.kv_heads = cfg['kv_heads']
+      except:
+        self.positional_embeddings = ['PE']
+        self.activation_function = 'GeLU'
+        self.vocab_size = 51200
+        self.kv_heads = self.attn_heads
+      try:
+        self.lora_attn_dim = cfg['lora_attn_dim']
+        self.lora_attn_alpha = cfg['lora_attn_alpha']
+        self.lora_q = cfg['lora_q']
+        self.lora_k = cfg['lora_k']
+        self.lora_v = cfg['lora_v']
+        self.lora_o = cfg['lora_o']
+      except:
+        self.lora_attn_dim = 0
+        self.lora_attn_alpha = 32
+        self.lora_q = False
+        self.lora_k = False
+        self.lora_v = False
+        self.lora_o = False
 
     def num_parameters(self):
       # https://cs.stanford.edu/~matei/papers/2021/sc_megatron_lm.pdf
       # Equation 2
       p = 2 * self.hidden * self.feedforward                   # MLP weights
-      p += 4 * self.hidden * self.attn_heads * self.attn_size  # Attn weights
+      # p += 4 * self.hidden * self.attn_heads * self.attn_size  # Attn weights
+      p += 2 * self.hidden * self.attn_heads * self.attn_size  # Attn weights:Q+O
+      p += 2 * self.hidden * self.kv_heads * self.attn_size  # Attn weights:K+V
       if self.lora_attn_dim>0:
         if self.lora_q:
           p += self.hidden * self.lora_attn_dim + self.lora_attn_dim * self.attn_heads * self.attn_size
@@ -58,10 +78,17 @@ class Llm:
         if self.lora_v:
           p += self.hidden * self.lora_attn_dim + self.lora_attn_dim * self.attn_heads * self.attn_size
       p += self.hidden + self.feedforward                      # biases MLP
-      p += 3 * self.attn_heads * self.attn_size + self.hidden  # biases Attn
+      # p += 3 * self.attn_heads * self.attn_size + self.hidden  # biases Attn
+      p += (self.attn_heads + 2 * self.kv_heads) * self.attn_size + self.hidden  # biases Attn
       p += 2 * 2 * self.hidden                                 # layer norm
       p *= self.num_blocks                                     # per each block
-      p += (51200 + self.seq_size) * self.hidden               # embeddings
+      assert self.positional_embeddings in [['PE'],['RoPE']], "embedding error"
+      if self.positional_embeddings == ['PE']:
+        p += (self.vocab_size + self.seq_size) * self.hidden               # embeddings
+      elif self.positional_embeddings == ['RoPE']:
+        # input and output embedding
+        p += 2 * self.vocab_size * self.hidden               # embeddings
+      print("number of parameters:",p)
       return p
 
   class Execution:
@@ -722,9 +749,9 @@ class Llm:
         self._llm_block.append(Linear(
           "AttnBlock_Key",
           self.sys,
-          self._batch_seq,
+          self._batch_seq * (self.app.attn_heads // self.app.kv_heads),
           self.app.hidden,
-          self.app.attn_heads * self.app.attn_size // self.exe.tensor_par,
+          self.app.kv_heads * self.app.attn_size // self.exe.tensor_par,
           self.app.lora_attn_dim,
           self.app.lora_k,
           needs_recompute=recompute_flag,
@@ -734,9 +761,9 @@ class Llm:
         self._llm_block.append(Linear(
           "AttnBlock_Value",
           self.sys,
-          self._batch_seq,
+          self._batch_seq * (self.app.attn_heads // self.app.kv_heads),
           self.app.hidden,
-          self.app.attn_heads * self.app.attn_size // self.exe.tensor_par,
+          self.app.kv_heads * self.app.attn_size // self.exe.tensor_par,
           self.app.lora_attn_dim,
           self.app.lora_v,
           needs_recompute=recompute_flag,
@@ -770,20 +797,50 @@ class Llm:
         raise self.Error('Wrong attention type', self.exe.attention_type)
     else:
       if self.exe.attention_type == 'multihead':
-        self._llm_block.append(LinearOverlapped(
-          "AttnBlock_QKV_AG",
-          self.sys,
-          self._batch_seq,
-          self.app.hidden,
-          self.app.attn_heads * self.app.attn_size *3,          # Q, K, V
-          self.exe.tensor_par_comm_type,
-          self.exe.tensor_par,
-          self.exe.tensor_par_net,
-          self.exe.tensor_par,
-          conjugate=False,
-          tp_overlap=self.exe.tensor_par_overlap,
-          needs_recompute=recompute_flag,
-          needs_recomm=recompute_ag_flag))
+        if self.app.kv_heads!=self.app.attn_heads:
+          self._llm_block.append(LinearOverlapped(
+            "AttnBlock_KV_AG",
+            self.sys,
+            self._batch_seq * (self.app.attn_heads // self.app.kv_heads),
+            self.app.hidden,
+            self.app.attn_heads * self.app.attn_size *2,
+            self.exe.tensor_par_comm_type,
+            self.exe.tensor_par,
+            self.exe.tensor_par_net,
+            self.exe.tensor_par,
+            conjugate=False,
+            tp_overlap=self.exe.tensor_par_overlap,
+            needs_recompute=recompute_flag,
+            needs_recomm=recompute_ag_flag))
+          self._llm_block.append(LinearOverlapped(
+            "AttnBlock_Q_AG",
+            self.sys,
+            self._batch_seq,
+            self.app.hidden,
+            self.app.attn_heads * self.app.attn_size,
+            self.exe.tensor_par_comm_type,
+            self.exe.tensor_par,
+            self.exe.tensor_par_net,
+            self.exe.tensor_par,
+            conjugate=False,
+            tp_overlap=self.exe.tensor_par_overlap,
+            needs_recompute=recompute_flag,
+            needs_recomm=recompute_ag_flag))
+        else:
+          self._llm_block.append(LinearOverlapped(
+            "AttnBlock_QKV_AG",
+            self.sys,
+            self._batch_seq,
+            self.app.hidden,
+            self.app.attn_heads * self.app.attn_size *3,          # Q, K, V
+            self.exe.tensor_par_comm_type,
+            self.exe.tensor_par,
+            self.exe.tensor_par_net,
+            self.exe.tensor_par,
+            conjugate=False,
+            tp_overlap=self.exe.tensor_par_overlap,
+            needs_recompute=recompute_flag,
+            needs_recomm=recompute_ag_flag))
       elif self.exe.attention_type == 'multiquery':
         self._llm_block.append(LinearOverlapped(
           "AttnBlock_Query_AG",
@@ -989,6 +1046,45 @@ class Llm:
       self.app.feedforward * self._batch_seq // self.exe.tensor_par,
       needs_recompute=recompute_flag,
       fused=self.exe.fused_activation))
+    # TODO: first approximately consider swish=GeLU
+    if self.app.activation_function == "SwiGLU":
+      if self.exe.tensor_par_overlap == 'none':
+        self._llm_block.append(Linear(
+          "MlpBlock_Mlp1_GLU",
+          self.sys,
+          self._batch_seq,
+          self.app.hidden,
+          self.app.feedforward // self.exe.tensor_par,
+          needs_recompute=recompute_flag,
+          # With seq_par, we use activations from Comm layers to reflect that
+          # they're split, otherwise we keep full size activations
+          activation_stored=(not recompute_ag_flag)))
+      else:
+        self._llm_block.append(LinearOverlapped(
+          "MlpBlock_Mlp1_AG_GLU",
+          self.sys,
+          self._batch_seq,
+          self.app.hidden,
+          self.app.feedforward,
+          self.exe.tensor_par_comm_type,
+          self.exe.tensor_par,
+          self.exe.tensor_par_net,
+          self.exe.tensor_par,
+          conjugate=False,
+          tp_overlap=self.exe.tensor_par_overlap,
+          needs_recompute=recompute_flag,
+          needs_recomm=recompute_ag_flag))
+      self._llm_block.append(ElementWise(
+        "MlpBlock_GLU_product",
+        self.sys,
+        pick(self.exe._sequence_par, self._seq_par_activation_size,
+            self._activation_size),
+        pick(self.exe._sequence_par, self._seq_par_activation_size,
+            self._activation_size),
+        needs_recompute=recompute_flag,
+        # Activation is stored in Fork instead
+        activation_stored=False,
+        activation_reused=True))
     if self.exe.tensor_par_overlap == 'none':
       self._llm_block.append(Linear(
         "MlpBlock_Mlp2",
@@ -2359,6 +2455,7 @@ class Llm:
       f"blocks={self.app.num_blocks}, " \
       f"hidden={self.app.hidden}, feedforward={self.app.feedforward}\n" \
       f"num attn heads: {self.app.attn_heads}, " \
+      f"num kv heads: {self.app.kv_heads}, " \
       f"attn_size={self.app.attn_size}\n" \
       f"Run on {self.exe.num_procs} processors with:\n" \
       f"TP={self.exe.tensor_par}\n" \
