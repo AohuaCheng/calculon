@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 """
-import calculon
+import infplane
 import os
 import tempfile
 import unittest
@@ -40,16 +40,16 @@ class JsonWriteReadTestCase(unittest.TestCase):
     os.remove(foo_file)
     os.remove(bar_file)
 
-    self.assertTrue(calculon.is_json_extension(reg_file))
-    self.assertTrue(calculon.is_json_extension(gz_file))
-    self.assertFalse(calculon.is_json_extension(foo_file))
-    self.assertFalse(calculon.is_json_extension(bar_file))
+    self.assertTrue(infplane.is_json_extension(reg_file))
+    self.assertTrue(infplane.is_json_extension(gz_file))
+    self.assertFalse(infplane.is_json_extension(foo_file))
+    self.assertFalse(infplane.is_json_extension(bar_file))
 
     self.assertFalse(os.path.exists(reg_file))
     self.assertFalse(os.path.exists(gz_file))
 
-    calculon.io.write_json_file(jd, reg_file)
-    calculon.io.write_json_file(jd, gz_file)
+    infplane.io.write_json_file(jd, reg_file)
+    infplane.io.write_json_file(jd, gz_file)
 
     self.assertTrue(os.path.exists(reg_file))
     self.assertTrue(os.path.exists(gz_file))
@@ -60,8 +60,8 @@ class JsonWriteReadTestCase(unittest.TestCase):
     self.assertTrue(reg_size > gz_size)
     self.assertTrue(gz_size > 0)
 
-    reg_jd = calculon.io.read_json_file(reg_file)
-    gz_jd = calculon.io.read_json_file(gz_file)
+    reg_jd = infplane.io.read_json_file(reg_file)
+    gz_jd = infplane.io.read_json_file(gz_file)
 
     self.assertEqual(reg_jd, jd)
     self.assertEqual(gz_jd, jd)

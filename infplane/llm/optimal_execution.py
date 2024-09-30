@@ -22,12 +22,12 @@ import multiprocessing as mp
 import psutil
 import os
 
-import calculon
-from calculon.util import pick, arg_true_false_all
-from calculon.llm import *
+import infplane
+from infplane.util import pick, arg_true_false_all
+from infplane.llm import *
 
 
-class OptimalExecution(calculon.CommandLine):
+class OptimalExecution(infplane.CommandLine):
   NAME = 'llm-optimal-execution'
   ALIASES = ['loe']
 
@@ -75,8 +75,8 @@ class OptimalExecution(calculon.CommandLine):
   def run_command(logger, args):
     assert args.top_n > 0, 'top-n must be > 0'
 
-    app = Llm.Application(calculon.io.read_json_file(args.application))
-    syst = System(calculon.io.read_json_file(args.system))
+    app = Llm.Application(infplane.io.read_json_file(args.application))
+    syst = System(infplane.io.read_json_file(args.system))
 
     params = []
     for tp in Llm.get_all_tensor_parallelisms(
@@ -140,9 +140,9 @@ class OptimalExecution(calculon.CommandLine):
         'stats': stats
       }
 
-    if calculon.io.is_json_extension(args.output):
+    if infplane.io.is_json_extension(args.output):
       logger.info(f'Output: {args.output}')
-      calculon.io.write_json_file(output, args.output)
+      infplane.io.write_json_file(output, args.output)
     elif args.output.endswith('.csv') or args.output.endswith('.csv.gz'):
       logger.info(f'Output: {args.output}')
       exe_keys = list(output[0]['execution'].keys())
@@ -268,4 +268,4 @@ class OptimalExecution(calculon.CommandLine):
     return current[:quantity]
 
 
-calculon.CommandLine.register(OptimalExecution)
+infplane.CommandLine.register(OptimalExecution)

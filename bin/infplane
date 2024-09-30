@@ -18,7 +18,7 @@
 """
 
 import argparse
-import calculon
+import infplane
 import logging
 import sys
 
@@ -29,19 +29,19 @@ if __name__ == '__main__':
   # CLI inspired from: https://github.com/ssnetsim/ssplot/
 
   # Creates an argparser and subparsers.
-  desc = 'Calculon: Co-design for large scale parallel applications'
+  desc = 'Infplane: Co-design for large scale parallel applications'
   ap = argparse.ArgumentParser(description=desc)
   ap.add_argument('-l', '--log', default='-',
                   help='Sets the log file, or - for stdout (default)')
   ap.add_argument('-v', '--verbosity', default='INFO',
                   help='Sets the logging level (see logging docs)')
   sp = ap.add_subparsers(title='commands', dest='command',
-                         description='commands available in Calculon',
+                         description='commands available in Infplane',
                          help='the command')
   sp.required = True
 
   # Registers each command line interface.
-  for cls in calculon.CommandLine.command_lines():
+  for cls in infplane.CommandLine.command_lines():
     cls.create_parser(sp)
 
   # Parses the args and creates the logger

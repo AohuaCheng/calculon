@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-import calculon
+import infplane
 import gzip
 import json
 import sys
 
 
 def main(args):
-  j = calculon.read_json_file(args.json_file)
+  j = infplane.read_json_file(args.json_file)
 
   header_entries = []
   for category in j['0']:

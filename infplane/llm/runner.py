@@ -15,10 +15,10 @@
  * limitations under the License.
 """
 
-import calculon
-from calculon.llm import *
+import infplane
+from infplane.llm import *
 
-class Runner(calculon.CommandLine):
+class Runner(infplane.CommandLine):
   NAME = 'llm'
   ALIASES = []
 
@@ -42,9 +42,9 @@ class Runner(calculon.CommandLine):
 
   @staticmethod
   def run_command(logger, args):
-    app_json = calculon.io.read_json_file(args.application)
-    exe_json = calculon.io.read_json_file(args.execution)
-    sys_json = calculon.io.read_json_file(args.system)
+    app_json = infplane.io.read_json_file(args.application)
+    exe_json = infplane.io.read_json_file(args.execution)
+    sys_json = infplane.io.read_json_file(args.system)
 
     app = Llm.Application(app_json)
     tmp = app.num_parameters()
@@ -62,15 +62,15 @@ class Runner(calculon.CommandLine):
 
     if args.stats == '-':
       model.display_stats()
-    elif calculon.is_json_extension(args.stats):
-      calculon.write_json_file(model.get_stats_json(args.layers), args.stats)
+    elif infplane.is_json_extension(args.stats):
+      infplane.write_json_file(model.get_stats_json(args.layers), args.stats)
     else:
       assert False, f'unknown stats extension: {args.stats}'
 
     if args.peers:
-      calculon.write_json_file(exe.get_peers_json(), args.peers)
+      infplane.write_json_file(exe.get_peers_json(), args.peers)
 
     return 0
 
 
-calculon.CommandLine.register(Runner)
+infplane.CommandLine.register(Runner)

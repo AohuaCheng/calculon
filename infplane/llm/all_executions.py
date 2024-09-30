@@ -26,12 +26,12 @@ import pandas
 import psutil
 import random
 
-import calculon
-from calculon.util import pick, arg_true_false_all
-from calculon.llm import *
+import infplane
+from infplane.util import pick, arg_true_false_all
+from infplane.llm import *
 
 
-class AllExecutions(calculon.CommandLine):
+class AllExecutions(infplane.CommandLine):
   NAME = 'llm-all-executions'
   ALIASES = ['lae']
 
@@ -134,8 +134,8 @@ class AllExecutions(calculon.CommandLine):
   def run_command(logger, args):
     assert args.output.endswith('.csv') or args.output.endswith('.csv.gz')
 
-    app = Llm.Application(calculon.io.read_json_file(args.application))
-    syst = System(calculon.io.read_json_file(args.system))
+    app = Llm.Application(infplane.io.read_json_file(args.application))
+    syst = System(infplane.io.read_json_file(args.system))
 
     executions = list(AllExecutions.all_executions(
       app, syst, args.num_procs, args.max_batch_size, args.datatype,
@@ -214,4 +214,4 @@ class AllExecutions(calculon.CommandLine):
       return current[:quantity]
 
 
-calculon.CommandLine.register(AllExecutions)
+infplane.CommandLine.register(AllExecutions)

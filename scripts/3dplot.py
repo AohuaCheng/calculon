@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import calculon
+import infplane
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -10,7 +10,7 @@ import numpy as np
 
 
 def main(args):
-  data = calculon.io.read_json_file(args.stats)
+  data = infplane.io.read_json_file(args.stats)
 
   # Turns the keys back into integers
   ndata = {}

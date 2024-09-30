@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import calculon
+import infplane
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ import tol_colors as tc
 
 
 def main(args):
-  data = calculon.io.read_json_file(args.stats)
+  data = infplane.io.read_json_file(args.stats)
 
   # Turns the keys back into integers
   ndata = {}

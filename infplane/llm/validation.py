@@ -19,12 +19,12 @@ import logging
 import math
 import os
 
-import calculon
-from calculon.util import pick
-from calculon.llm import *
+import infplane
+from infplane.util import pick
+from infplane.llm import *
 
 
-class Validation(calculon.CommandLine):
+class Validation(infplane.CommandLine):
   NAME = 'llm-validation'
   ALIASES = ['lv']
 
@@ -116,7 +116,7 @@ class Validation(calculon.CommandLine):
       return kProfile[model][mode]
 
     syst_file = os.path.join(args.base_dir, 'systems', 'a100_80e.json')
-    syst = System(calculon.io.read_json_file(syst_file))
+    syst = System(infplane.io.read_json_file(syst_file))
     data = {}
     for model in kModels:
       data[model] = {}
@@ -125,8 +125,8 @@ class Validation(calculon.CommandLine):
           print(f'Analyzing {model} {mode}')
         data[model][mode] = {}
         app_file, exe_file = get_files(model, mode)
-        app = Llm.Application(calculon.read_json_file(app_file))
-        exe = Llm.Execution.from_json(calculon.read_json_file(exe_file))
+        app = Llm.Application(infplane.read_json_file(app_file))
+        exe = Llm.Execution.from_json(infplane.read_json_file(exe_file))
         mt = Llm(app, logger)
         mt.compile(syst, exe)
         mt.run(syst)
@@ -232,7 +232,7 @@ class Validation(calculon.CommandLine):
       return kProfile[model][mode]
 
     syst_file = os.path.join(args.base_dir, 'systems', 'a100_80e.json')
-    syst = System(calculon.io.read_json_file(syst_file))
+    syst = System(infplane.io.read_json_file(syst_file))
     raw = {}
     for model in kModels:
       raw[model] = {}
@@ -241,8 +241,8 @@ class Validation(calculon.CommandLine):
           print(f'Analyzing {model} {mode}')
         raw[model][mode] = {}
         app_file, exe_file = get_files(model, mode)
-        app = Llm.Application(calculon.read_json_file(app_file))
-        exe = Llm.Execution.from_json(calculon.read_json_file(exe_file))
+        app = Llm.Application(infplane.read_json_file(app_file))
+        exe = Llm.Execution.from_json(infplane.read_json_file(exe_file))
         mt = Llm(app, logger)
         mt.compile(syst, exe)
         mt.run(syst)
@@ -317,7 +317,7 @@ class Validation(calculon.CommandLine):
       return kProfile[model][mode]
 
     syst_file = os.path.join(args.base_dir, 'systems', 'a100_80g.json')
-    syst = System(calculon.io.read_json_file(syst_file))
+    syst = System(infplane.io.read_json_file(syst_file))
     data = {}
     for model in kModels:
       data[model] = {}
@@ -326,8 +326,8 @@ class Validation(calculon.CommandLine):
           print(f'Analyzing {model} {mode}')
         data[model][mode] = {}
         app_file, exe_file = get_files(model, mode)
-        app = Llm.Application(calculon.read_json_file(app_file))
-        exe = Llm.Execution.from_json(calculon.read_json_file(exe_file))
+        app = Llm.Application(infplane.read_json_file(app_file))
+        exe = Llm.Execution.from_json(infplane.read_json_file(exe_file))
         mt = Llm(app, logger)
         mt.compile(syst, exe)
         mt.run(syst)
@@ -357,4 +357,4 @@ class Validation(calculon.CommandLine):
     print(f'Max,,{max_error:.2f}%')
     print(',')
 
-calculon.CommandLine.register(Validation)
+infplane.CommandLine.register(Validation)

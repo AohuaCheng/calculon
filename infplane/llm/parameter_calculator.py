@@ -17,10 +17,10 @@
 
 import os
 
-import calculon
-from calculon.llm import *
+import infplane
+from infplane.llm import *
 
-class ParameterCalculator(calculon.CommandLine):
+class ParameterCalculator(infplane.CommandLine):
   NAME = 'llm-parameter-calculator'
   ALIASES = ['lpc']
 
@@ -37,7 +37,7 @@ class ParameterCalculator(calculon.CommandLine):
 
   @staticmethod
   def run_command(logger, args):
-    app_json = calculon.io.read_json_file(args.application)
+    app_json = infplane.io.read_json_file(args.application)
 
     try:
       app = Llm.Application(app_json)
@@ -53,4 +53,4 @@ class ParameterCalculator(calculon.CommandLine):
                 f'{human_format(app.num_parameters())}')
 
 
-calculon.CommandLine.register(ParameterCalculator)
+infplane.CommandLine.register(ParameterCalculator)

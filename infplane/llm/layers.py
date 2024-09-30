@@ -15,7 +15,7 @@
  * limitations under the License.
 """
 
-from calculon import *
+from infplane import *
 
 
 class Layer:

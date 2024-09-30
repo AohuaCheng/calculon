@@ -15,22 +15,14 @@
  * limitations under the License.
 """
 
-import calculon
+from .layers import *
+from .llm import *
 
-class Version(calculon.CommandLine):
-  NAME = 'version'
-  ALIASES = ['v']
+# Command lines
+from .all_executions import AllExecutions
+from .optimal_execution import OptimalExecution
+from .parameter_calculator import ParameterCalculator
+from .validation import Validation
+from .runner import Runner
 
-  @staticmethod
-  def create_parser(subparser):
-    sp = subparser.add_parser(Version.NAME, aliases=Version.ALIASES,
-                              help='show the version and exit')
-    sp.set_defaults(func=Version.run_command)
-
-  @staticmethod
-  def run_command(logger, args):
-    # version is specified in __init__.py
-    logger.info(calculon.__version__)
-
-
-calculon.CommandLine.register(Version)
+from .GA_test import GAExecution
